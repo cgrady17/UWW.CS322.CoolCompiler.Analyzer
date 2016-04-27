@@ -267,6 +267,7 @@ class program extends Program {
     	errors. Part (2) can be done in a second stage when you want
 	to test the complete compiler.
     */
+    
     public void semant() {
         /**
          * Instantiate the ClassTable object
