@@ -219,6 +219,10 @@ class Cases extends ListNode {
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
 class program extends Program {
     protected Classes classes;
+    ClassTable classTable;
+    LinkedHashMap<String, SymbolTable> objects;
+    LinkedHashMap<String, SymbolTable> methods;
+
     /** Creates "program" AST node. 
       *
       * @param lineNumber the line in the source file from which this node came.
@@ -227,6 +231,9 @@ class program extends Program {
     public program(int lineNumber, Classes a1) {
         super(lineNumber);
         classes = a1;
+
+        this.objects = new LinkedHashMap<>();
+        this.methods = new LinkedHashMap<>();
     }
     public TreeNode copy() {
         return new program(lineNumber, (Classes)classes.copy());
@@ -265,7 +272,7 @@ class program extends Program {
          * Instantiate the ClassTable object
          * This will also set up our class lists
          */
-        ClassTable classTable = new ClassTable(classes);
+        classTable = new ClassTable(classes);
 
         // Check for errors in the ClassTable
         if (classTable.errors()) {
@@ -273,7 +280,12 @@ class program extends Program {
             System.exit(1);
         }
 
+        /**
+         * Instantiate our Traverser that will be used to traverse
+         * our basic classes
+         */
         Traverser traverser = new Traverser(classTable.basicClasses);
+        // Invoke the traversal
         traverser.traverse();
     }
 
