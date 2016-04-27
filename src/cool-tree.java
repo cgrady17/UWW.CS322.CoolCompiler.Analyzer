@@ -261,8 +261,6 @@ class program extends Program {
 	to test the complete compiler.
     */
     
-    //This is a test
-    
     public void semant() {
         /**
          * Instantiate the ClassTable object
