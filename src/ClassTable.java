@@ -6,7 +6,7 @@ import java.io.PrintStream;
 class ClassTable {
     private int semantErrors;
     private PrintStream errorStream;
-	public Classes basicClasses;
+	Classes basicClasses;
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not

@@ -287,7 +287,7 @@ class program extends Program {
          */
         Traverser traverser = new Traverser(classTable.basicClasses);
         // Invoke the traversal
-        traverser.traverse();
+        traverser.traverse(this);
     }
 
 }
