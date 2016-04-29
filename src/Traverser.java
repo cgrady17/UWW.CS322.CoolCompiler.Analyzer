@@ -97,7 +97,7 @@ class Traverser {
     public void traverse( Expression expression, SymbolTable objectsTable, SymbolTable methodsTable, class_ class_ ) {
     	
     	// Determine the type of expression
-    	Expression expressionType = expressionType.valueOf(expression.getClass().getSimpleName());
+    	ExpressionType expressionType = ExpressionType.valueOf(expression.getClass().getSimpleName());
         
     	switch( expressionType ) {
             case assign:
@@ -227,7 +227,7 @@ enum FeatureType {
     method
 }
 
-enum expressionType {
+enum ExpressionType {
 	assign, static_dispatch, dispatch, cond, loop, typcase, block, let, plus, sub,
 	mul, divide, neg, lt, eq, leq, comp, int_const, bool_const, string_const, new_,
 	isvoid, no_expr, object
