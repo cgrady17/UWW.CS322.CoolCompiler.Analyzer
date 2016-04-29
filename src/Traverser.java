@@ -76,7 +76,7 @@ class Traverser {
     private void serviceAttribute(attr attribute, SymbolTable objectsTable, ClassTable classTable, class_ class_) {
         // We first have to check if the attribute is already in the
         // objects table. If it is, we throw a semantic error
-        if (objectsTable.lookup(((attr)attribute).name) != null) {
+        if (objectsTable.lookup(((attr)attribute).name) != null) { 
             classTable.semantError(class_.getFilename(), attribute).println("Attribute " + ((attr) attribute).name.toString() + " has already been defined.");
         }
 
@@ -86,9 +86,151 @@ class Traverser {
         // We now need to traverse the expression
         // TODO: Traverse the expression
     }
+
+    /** Expression traversing
+     * Fills in types and scoping for an expression
+     * @param Expression The expression being traversed
+     * @param objectsTable The symbol table to which the attribute may be added.
+     * @param methodsTable The symbol table to which the attribute may be added
+     * @param class_ The current class_ of which this attribute is a Feature.
+     */
+    public void traverse( Expression expression, SymbolTable objectsTable, SymbolTable methodsTable, class_ class_ ) {
+    	
+    	// Determine the type of expression
+    	Expression expressionType = expressionType.valueOf(expression.getClass().getSimpleName());
+        
+    	switch( expressionType ) {
+            case assign:
+            	// Traverse assignment to find type
+            	Expression assignment = ( ( assign )expression ).getExpression();
+            	
+            	// Temp to help understand assign
+            	expression.dump_with_types(System.out,0);
+            	
+                traverse( assignment, objectSymTab, methodSymTab, class_ );
+                expression.set_type( assignment.get_type() );
+                break;
+
+            case static_dispatch:
+                // What is static dispatch?
+            	//TODO
+                break;
+                
+            case dispatch:
+            	// What is dispatch?
+            	//TODO
+            	break;
+            	
+            case cond:
+            	// A condition has a predicate, then expression, and else expression
+            	Expression if_ = ( (cond)expression ).pred;
+            	Expression then_ = ( (cond)expression ).then_exp;
+            	Expression else_ = ( (cond)expression ).else_exp;
+            	
+            	// Temp to help understand cond
+            	expression.dump_with_types(System.out,0);
+            	
+            	// We need to travserse through each of these
+            	traverse( if_ , objectSymTab, methodSymTab, class_ );
+            	traverse( then_ , objectSymTab, methodSymTab, class_ );
+            	traverse( else_ , objectSymTab, methodSymTab, class_ );
+            	// If else statements should go into a new scope
+            	//TODO
+            	break;
+            	
+            case loop:
+            	//TODO
+            	break;
+            	
+            case typcase:
+            	//TODO
+            	break;
+            	
+            case block:
+            	//TODO
+            	break;
+            	
+            case let:
+            	//TODO
+            	break;
+            	
+            case plus:
+            	//TODO
+            	break;
+            	
+            case sub:
+            	//TODO
+            	break;
+            	
+            case mul:
+            	//TODO
+            	break;
+            	
+            case divide:
+            	//TODO
+            	break;
+            	
+            case neg:
+            	//TODO
+            	break;
+            	
+            case lt:
+            	//TODO
+            	break;
+            	
+            case eq:
+            	//TODO
+            	break;
+            	
+            case leq:
+            	//TODO
+            	break;
+            	
+            case comp:
+            	//TODO
+            	break;
+            	
+            case int_const:
+            	//TODO
+            	break;
+            	
+            case bool_const:
+            	//TODO
+            	break;
+            	
+            case string_const:
+            	//TODO
+            	break;
+            	
+            case new_:
+            	//TODO
+            	break;
+            	
+            case isvoid:
+            	//TODO
+            	break;
+            	
+            case no_expr:
+            	//TODO
+            	break;
+            	
+            case object:
+            	//TODO
+            	break;
+            	
+        }
+    }
 }
 
 enum FeatureType {
     attr,
     method
+}
+
+enum expressionType {
+	assign, static_dispatch, dispatch, cond, loop, typcase, block, let, plus, sub,
+	mul, divide, neg, lt, eq, leq, comp, int_const, bool_const, string_const, new_,
+	isvoid, no_expr, object
+}
+
 }
