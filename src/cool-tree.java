@@ -1,10 +1,4 @@
-// -*- mode: java -*- 
-//
-// file: cool-tree.m4
-//
-// This file defines the AST
-//
-//////////////////////////////////////////////////////////
+
 import java.io.PrintStream;
 import java.util.*;
 import java.lang.*;
@@ -866,8 +860,8 @@ class let extends Expression {
     <p>
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
 class plus extends Expression {
-    protected Expression e1;
-    protected Expression e2;
+    protected Expression e1; //lhs
+    protected Expression e2; //rhs
     /** Creates "plus" AST node. 
       *
       * @param lineNumber the line in the source file from which this node came.
