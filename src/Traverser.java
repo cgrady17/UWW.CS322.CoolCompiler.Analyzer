@@ -102,12 +102,12 @@ class Traverser {
     	switch( expressionType ) {
             case assign:
             	// Traverse assignment to find type
-            	Expression assignment = ( ( assign )expression ).getExpression();
+            	Expression assignment = ( ( assign )expression ).expr;
             	
             	// Temp to help understand assign
             	expression.dump_with_types(System.out,0);
             	
-                traverse( assignment, objectSymTab, methodSymTab, class_ );
+                traverse( assignment, objectsTable, methodsTable, class_ );
                 expression.set_type( assignment.get_type() );
                 break;
 
@@ -130,16 +130,19 @@ class Traverser {
             	// Temp to help understand cond
             	expression.dump_with_types(System.out,0);
             	
-            	// We need to travserse through each of these
-            	traverse( if_ , objectSymTab, methodSymTab, class_ );
-            	traverse( then_ , objectSymTab, methodSymTab, class_ );
-            	traverse( else_ , objectSymTab, methodSymTab, class_ );
-            	// If else statements should go into a new scope
+            	// We need to traverse through each of these
+            	traverse( if_ , objectsTable, methodsTable, class_ );
+            	traverse( then_ , objectsTable, methodsTable, class_ );
+            	traverse( else_ , objectsTable, methodsTable, class_ );
+            	// If-else statements should go into a new scope
             	//TODO
             	break;
             	
             case loop:
             	//TODO
+            	objectsTable.enterScope();
+            	//TODO a loop should have its own scope
+            	objectsTable.exitScope();
             	break;
             	
             case typcase:
@@ -152,54 +155,69 @@ class Traverser {
             	
             case let:
             	//TODO
+            	objectsTable.enterScope();
+            	//TODO let has its own scope
+            	objectsTable.exitScope();
             	break;
             	
             case plus:
             	//TODO
+            	expression.set_type( TreeConstants.Int );
             	break;
             	
             case sub:
             	//TODO
+            	expression.set_type( TreeConstants.Int );
             	break;
             	
             case mul:
             	//TODO
+            	expression.set_type( TreeConstants.Int );
             	break;
             	
             case divide:
             	//TODO
+            	expression.set_type( TreeConstants.Int );
             	break;
             	
             case neg:
             	//TODO
+            	expression.set_type( TreeConstants.Int );
             	break;
             	
             case lt:
             	//TODO
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case eq:
             	//TODO
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case leq:
             	//TODO
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case comp:
             	//TODO
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case int_const:
             	//TODO
+            	expression.set_type( TreeConstants.Int );
             	break;
             	
             case bool_const:
             	//TODO
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case string_const:
             	//TODO
+            	expression.set_type( TreeConstants.Str );
             	break;
             	
             case new_:
@@ -208,6 +226,7 @@ class Traverser {
             	
             case isvoid:
             	//TODO
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case no_expr:
@@ -233,4 +252,3 @@ enum ExpressionType {
 	isvoid, no_expr, object
 }
 
-}
