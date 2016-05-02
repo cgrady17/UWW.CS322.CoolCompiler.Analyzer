@@ -1,4 +1,6 @@
+import javax.swing.plaf.metal.MetalIconFactory;
 import java.io.PrintStream;
+import java.util.*;
 
 /** This class may be used to contain the semantic information such as
  * the inheritance graph.  You may use it or not as you like: it is only
@@ -7,6 +9,8 @@ class ClassTable {
     private int semantErrors;
     private PrintStream errorStream;
 	Classes basicClasses;
+	LinkedHashMap<String, class_> classByName;
+	LinkedHashMap<String, List<String>> childClasses;
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -166,6 +170,7 @@ class ClassTable {
 		       filename);
 
 
+		// Create an array of the previously instantiated class_s
 		class_[] class_s = new class_[] {
 				Object_class,
 				IO_class,
@@ -174,9 +179,25 @@ class ClassTable {
 				Int_class
 		};
 
+		// Loop through each class_ and append to our basic classes <code>Classes</code>
 		for (class_ class_ : class_s) basicClasses.appendElement(class_);
 
-    }
+		// Add all basic classes and their corresponding names to the <code>LinkedHashMap</code>
+		classByName.put(TreeConstants.Object_.toString(), Object_class);
+		classByName.put(TreeConstants.IO.toString(), IO_class);
+		classByName.put(TreeConstants.Bool.toString(), Bool_class);
+		classByName.put(TreeConstants.Str.toString(), Str_class);
+		classByName.put(TreeConstants.Int.toString(), Int_class);
+
+
+		// We need to instantiate our list of classes and their children
+		// to the basic classes. We'll then actually build out this list later
+		childClasses.put(TreeConstants.Object_.toString(), new ArrayList<String>());
+		childClasses.put(TreeConstants.IO.toString(), new ArrayList<String>());
+		childClasses.put(TreeConstants.Bool.toString(), new ArrayList<String>());
+		childClasses.put(TreeConstants.Str.toString(), new ArrayList<String>());
+		childClasses.put(TreeConstants.Int.toString(), new ArrayList<String>());
+	}
 	
 
 
@@ -185,6 +206,8 @@ class ClassTable {
 		errorStream = System.err;
 
 		basicClasses = new Classes(0);
+		classByName = new LinkedHashMap<>();
+		childClasses = new LinkedHashMap<>();
 
 		installBasicClasses();
     }
@@ -233,6 +256,29 @@ class ClassTable {
     public boolean errors() {
 	return semantErrors != 0;
     }
+
+	public void fillChildClasses(Classes classes) {
+		// Add all existing classes, other than Object, to Object's list of children
+		// At this time, it would only be the basic classes
+		for (String className : childClasses.keySet()) {
+			if (Objects.equals(className, TreeConstants.Object_.toString())) continue;
+
+			childClasses.get(TreeConstants.Object_.toString()).add(className);
+		}
+
+		for (Enumeration e = classes.getElements(); e.hasMoreElements();) {
+			class_ currentClass_ = ((class_) e.nextElement());
+
+			if (classByName.containsKey(currentClass_.name.toString())) {
+				this.semantError(currentClass_).println("Class " + currentClass_.name.toString() + " has already been defined.");
+				continue;
+			}
+
+			classByName.put(currentClass_.name.toString(), currentClass_);
+
+			String parentClass = currentClass_.parent.toString();
+		}
+	}
 }
 			  
     
