@@ -212,10 +212,26 @@ class Cases extends ListNode {
     <p>
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
 class program extends Program {
-    protected Classes classes;
+    private Classes classes;
     ClassTable classTable;
+
+    /**
+     * <code>objects</code> represents our collection of <code>SymbolTable</code>s for
+     * each Object.
+     */
     LinkedHashMap<String, SymbolTable> objects;
+
+    /**
+     * <code>methods</code> represents our collection of <code>SymbolTable</code>s for
+     * each Method.
+     */
     LinkedHashMap<String, SymbolTable> methods;
+
+    /**
+     * <code>methodsByObject</code> represents our 3-dimensional key value collection of
+     * Methods by their containing Object.
+     */
+    protected LinkedHashMap<String, LinkedHashMap<String, List<AbstractSymbol>>> methodsByObject;
 
     /** Creates "program" AST node. 
       *
@@ -226,8 +242,20 @@ class program extends Program {
         super(lineNumber);
         classes = a1;
 
+        /**
+         * Instantiate <code>objects</code> to an empty <code>LinkedHashMap</code>.
+         */
         this.objects = new LinkedHashMap<>();
+
+        /**
+         * Instantiate <code>objects</code> to an empty <code>LinkedHashMap</code>.
+         */
         this.methods = new LinkedHashMap<>();
+
+        /**
+         * Instantiate <code>methodsByObject</code> to an empty <code>LinkedHashMap</code>.
+         */
+        this.methodsByObject = new LinkedHashMap<>();
     }
     public TreeNode copy() {
         return new program(lineNumber, (Classes)classes.copy());
@@ -282,6 +310,14 @@ class program extends Program {
         Traverser traverser = new Traverser(classTable.basicClasses);
         // Invoke the traversal
         traverser.traverse(this);
+
+        /**
+         * Instantiate our Traverses that will be use to traverse
+         * complex classes
+         */
+        Traverser complexTraverser = new Traverser(classes);
+        // Invoke the traversal
+        complexTraverser.traverse(this);
     }
 
 }
