@@ -76,7 +76,7 @@ class Traverser {
     	if (methodsTable.containsKey(method.name.toString())) {
 			classTable.semantError( currentClass_.getFilename(), method ).println( "Method " + method.name.toString() + " was already defined." );
 		}
-    	
+
         // We now want to traverse the method
         traverse(method, objectsTable, methodsTable, currentClass_);
     }
@@ -92,7 +92,7 @@ class Traverser {
         // We first have to check if the attribute is already in the
         // objects table. If it is, we throw a semantic error
     	AbstractSymbol attrName = ((attr)attribute).name;
-        if ( objectsTable.lookup( attrName ) != null ) { 
+        if ( objectsTable.lookup( attrName ) != null ) {
             program.classTable.semantError(class_.getFilename(), attribute).println( "Attribute " + attrName.toString() + " has already been defined." );
         }
 
@@ -110,21 +110,23 @@ class Traverser {
      * @param class_ The current class_ of which this attribute is a Feature.
      */
     private void traverse(Expression expression, SymbolTable objectsTable, class_ class_) {
-    	
+
     	// Determine the type of expression
     	ExpressionType expressionType = ExpressionType.valueOf( expression.getClass().getSimpleName() );
         System.out.println( "Expression Type: " + expressionType.toString() );
-        
+        if (expression.get_type() != null) {
+            System.out.print("\tExact type: " + expression.get_type().toString());
+        }
     	switch( expressionType ) {
             case assign:
             	// Traverse assignment to find type
             	Expression assignment = ( (assign)expression ).expr;
-            	
+
             	// Temp to help understand assign
             	expression.dump_with_types(System.out,0);
-            	
+
                 traverse( assignment, objectsTable, class_ );
-                
+
                 expression.set_type( assignment.get_type() );
                 break;
 
@@ -132,21 +134,21 @@ class Traverser {
                 // What is static dispatch?
             	//TODO
                 break;
-                
+
             case dispatch:
             	// What is dispatch?
             	//TODO
             	break;
-            	
+
             case cond:
             	// A condition has a predicate, then expression, and else expression
             	Expression if_ = ( (cond)expression ).pred;
             	Expression then_ = ( (cond)expression ).then_exp;
             	Expression else_ = ( (cond)expression ).else_exp;
-            	
+
             	// Temp to help understand cond
             	expression.dump_with_types(System.out,0);
-            	
+
             	// We need to traverse through each of these
             	traverse( if_ , objectsTable, class_ );
             	traverse( then_ , objectsTable, class_ );
@@ -154,7 +156,7 @@ class Traverser {
             	// If-else statements should go into a new scope right?
             	//TODO
             	break;
-            	
+
             case loop:
             	// a loop should have its own scope
             	objectsTable.enterScope();
@@ -164,117 +166,117 @@ class Traverser {
             	// exit scope
             	objectsTable.exitScope();
             	break;
-            	
+
             case typcase:
             	//TODO
             	break;
-            	
+
             case block:
             	//TODO
             	break;
-            	
+
             case let:
             	//TODO: let should have its own scope, initial expression, and body expression
             	objectsTable.enterScope();
 
             	// add to object table
             	objectsTable.addId( ((let)expression).identifier, ((let)expression).type_decl );
-            	
+
             	// traverse its initial expression and body
             	traverse( ((let)expression).init, objectsTable, class_ );
             	traverse( ((let)expression).body, objectsTable, class_ );
 
             	// set type
-            	
+
             	// exit scope
             	objectsTable.exitScope();
             	break;
-            	
+
             case plus:
             	expression.set_type( TreeConstants.Int );
             	traverse( ((plus)expression).e1, objectsTable, class_ );
             	traverse( ((plus)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case sub:
             	expression.set_type( TreeConstants.Int );
             	traverse( ((sub)expression).e1, objectsTable, class_ );
             	traverse( ((sub)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case mul:
             	expression.set_type( TreeConstants.Int );
             	traverse( ((mul)expression).e1, objectsTable, class_ );
             	traverse( ((mul)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case divide:
             	expression.set_type( TreeConstants.Int );
             	traverse( ((divide)expression).e1, objectsTable, class_ );
             	traverse( ((divide)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case neg:
             	expression.set_type( TreeConstants.Int );
             	traverse( ((neg)expression).e1, objectsTable, class_ );
             	break;
-            	
+
             case lt:
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((lt)expression).e1, objectsTable, class_ );
             	traverse( ((lt)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case eq:
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((eq)expression).e1, objectsTable, class_ );
             	traverse( ((eq)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case leq:
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((leq)expression).e1, objectsTable, class_ );
             	traverse( ((leq)expression).e2, objectsTable, class_ );
             	break;
-            	
+
             case comp:
             	// compare?
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((comp)expression).e1, objectsTable, class_ );
             	break;
-            	
+
             case int_const:
             	//TODO token
             	expression.set_type( TreeConstants.Int );
             	break;
-            	
+
             case bool_const:
             	//TODO token
             	expression.set_type( TreeConstants.Bool );
             	break;
-            	
+
             case string_const:
             	//TODO token
             	expression.set_type( TreeConstants.Str );
             	break;
-            	
+
             case new_:
             	//TODO type_name
             	break;
-            	
+
             case isvoid:
             	//TODO e1
             	expression.set_type( TreeConstants.Bool );
             	break;
-            	
+
             case no_expr:
             	//TODO is this saying there is nothing in the expression?
             	break;
-            	
+
             case object:
             	//TODO
             	break;
-            	
+
         }
     }
 
@@ -330,6 +332,14 @@ class Traverser {
 
         // Exit the symbol table's scope
         objectsTable.exitScope();
+    }
+
+    /**
+     * Traverse the AST and perform type checking on all
+     * elements.
+     */
+    void typeCheck() {
+
     }
 }
 
