@@ -183,7 +183,9 @@ class ClassTable {
     public ClassTable(Classes cls) {
 		semantErrors = 0;
 		errorStream = System.err;
-	
+
+		basicClasses = new Classes(0);
+
 		installBasicClasses();
     }
 
