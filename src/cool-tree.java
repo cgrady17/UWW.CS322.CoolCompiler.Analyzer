@@ -300,13 +300,14 @@ class program extends Program {
         // Check for errors in the ClassTable
         if (classTable.errors()) {
             System.err.println("Compilation halted due to static semantic errors.");
-            System.exit(1);
+            System.exit(1); 
         }
 
         /**
          * Instantiate our Traverser that will be used to traverse
          * our basic classes
          */
+        System.out.println( "\nTraversing Basic Classes..." );
         Traverser traverser = new Traverser(classTable.basicClasses);
         // Invoke the traversal
         traverser.traverse(this);
@@ -315,6 +316,7 @@ class program extends Program {
          * Instantiate our Traverses that will be use to traverse
          * complex classes
          */
+        System.out.println( "\nTraversing Classes..." );
         Traverser complexTraverser = new Traverser(classes);
         // Invoke the traversal
         complexTraverser.traverse(this);

@@ -102,7 +102,8 @@ class Traverser {
 
         // We now need to traverse the expression
         System.out.println( "Traversing attr expression in " + attribute.name + " at line " + attribute.getLineNumber() );
-        traverse(((attr)attribute).init, objectsTable, class_ );
+        attribute.dump(System.out, 0);
+        traverse(attribute.init, objectsTable, class_ );
     }
 
     /** Expression traversing
