@@ -25,7 +25,9 @@ CSRC = \
 	SymtabExample.java \
 	TokenConstants.java \
 	TreeNode.java \
-	Utilities.java
+	Utilities.java \
+	InheritanceTree.java \
+	Traverser.java
 TSRC= mysemant mycoolc cool-tree.aps
 CGEN= 
 LIBS= lexer parser cgen
