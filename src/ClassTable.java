@@ -1,6 +1,3 @@
-import sun.reflect.generics.tree.Tree;
-
-import javax.swing.plaf.metal.MetalIconFactory;
 import java.io.PrintStream;
 import java.util.*;
 
@@ -13,6 +10,22 @@ class ClassTable {
 	public Classes basicClasses;
 	public LinkedHashMap<String, class_> classByName;
 	public LinkedHashMap<String, List<String>> childClasses;
+
+    public ClassTable(Classes cls) {
+        semantErrors = 0; // Initialize the error counter to 0
+        errorStream = System.err; // Set the error stream to the systems current error PrintStream
+
+        basicClasses = new Classes(0); // Initialize our basic classes list to empty
+        classByName = new LinkedHashMap<>(); // Initialize our classes by name coll to empty
+        childClasses = new LinkedHashMap<>(); // Initialize our inheritance tree to empty
+
+        // Call the provided installBasicClasses to set up the basic classes
+        // in each of our class collections
+        installBasicClasses();
+
+        // Call fillChildClasses to build our our inheritance tree
+        fillChildClasses(cls);
+    }
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -200,21 +213,6 @@ class ClassTable {
 		childClasses.put(TreeConstants.Str.toString(), new ArrayList<String>());
 		childClasses.put(TreeConstants.Int.toString(), new ArrayList<String>());
 	}
-	
-
-
-    public ClassTable(Classes cls) {
-		semantErrors = 0;
-		errorStream = System.err;
-
-		basicClasses = new Classes(0);
-		classByName = new LinkedHashMap<>();
-		childClasses = new LinkedHashMap<>();
-
-		installBasicClasses();
-
-        fillChildClasses(cls);
-    }
 
     /** Prints line number and file name of the given class.
      *
@@ -261,6 +259,12 @@ class ClassTable {
 	return semantErrors != 0;
     }
 
+    /**
+     * Builds out a full collection of child classes for each class.
+     * This essentially builds out the real inheritance graph used
+     * throughout this program.
+     * @param classes The <code>Classes</code> object for this program.
+     */
 	private void fillChildClasses(Classes classes) {
 		// Add all existing classes, other than Object, to Object's list of children
 		// At this time, it would only be the basic classes
@@ -270,34 +274,63 @@ class ClassTable {
 			childClasses.get(TreeConstants.Object_.toString()).add(className);
 		}
 
+        // Enumerate over each class in classes and add them to their respective parent
 		for (Enumeration e = classes.getElements(); e.hasMoreElements();) {
+            // Get the current class of the enumeration
 			class_ currentClass_ = ((class_) e.nextElement());
 
+            // If the class is already in <code>classByName</code> then it
+            // has been defined multiple times. Throw a semantError
 			if (classByName.containsKey(currentClass_.name.toString())) {
 				this.semantError(currentClass_).println("Class " + currentClass_.name.toString() + " has already been defined.");
+                // We can't continue with this class as it's invalid, so move on to the next iteration of the loop
 				continue;
 			}
 
+            // If we're here then the class hasn't already been defined and we
+            // add it to the list of classes by name
 			classByName.put(currentClass_.name.toString(), currentClass_);
 
+            // Get teh parent class of this class
 			String parentClass = currentClass_.parent.toString();
+
+            // Add the parent class if it's not already in there
+            // This should only ever happen on the first child of the parent
 			if (!childClasses.containsKey(parentClass)) {
 				childClasses.put(parentClass, new ArrayList<String>());
 			}
 
+            // Add this class to the children's list of its parent
 			childClasses.get(parentClass).add(currentClass_.name.toString());
 		}
 
+        checkInheritanceIntegrity();
+	}
+
+    /**
+     * Iterates through each of the classes in the inheritance tree
+     * and makes sure that nothing inherits from an undefined or invalid class.
+     */
+    private void checkInheritanceIntegrity() {
+        // Loop through each class in childClass's root (these would be parent classes)
+        // and make sure they exist in our collection of classes by name
+        // If they don't, then they're undefined and all of their child classes have an invalid
+        // parent
         for (String parentClass : childClasses.keySet()) {
             if (!classByName.containsKey(parentClass)) {
                 for (String childClass : childClasses.get(parentClass)) {
-                    this.semantError(classByName.get(childClass)).println("Class " + childClass + " is inheriting from undefined class, " + parentClass + ".");
+                    this.semantError(classByName.get(childClass)).println("Class " + childClass + " inherits from undefined class, " + parentClass + ".");
                 }
 
+                // Remove the offending parent from the inheritance tree
                 childClasses.remove(parentClass);
             }
         }
 
+        // No class can inherit from the String, Int, and Boolean primitives
+        // Make sure that their respective child lists are empty
+        // If they're not empty, throw a semantic error showing all of the child classes
+        // that are invalid
         if (!childClasses.get(TreeConstants.Str.toString()).isEmpty()) {
             String errorString = "Class(s) ";
             for (String childClassName : childClasses.get(TreeConstants.Str.toString())) {
@@ -327,5 +360,5 @@ class ClassTable {
             errorString += " inherits from primitive Boolean.";
             this.semantError(classByName.get(TreeConstants.Bool.toString())).println(errorString);
         }
-	}
+    }
 }

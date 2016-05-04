@@ -290,11 +290,10 @@ class program extends Program {
     	errors. Part (2) can be done in a second stage when you want
 	to test the complete compiler.
     */
-    
     public void semant() {
         /**
          * Instantiate the ClassTable object
-         * This will also set up our class lists
+         * This will also set up our class lists and inheritance tree
          */
         classTable = new ClassTable(classes);
 
@@ -330,6 +329,9 @@ class program extends Program {
     }
 }
 
+/**
+ * Indicates what type of class a certain class is.
+ */
 enum ClassType {
     Basic,
     Complex
