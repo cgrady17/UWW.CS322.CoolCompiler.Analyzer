@@ -1,3 +1,5 @@
+import java.util.Enumeration;
+
 public class InheritanceTree {
     private program program;
 
@@ -12,11 +14,20 @@ public class InheritanceTree {
     private void buildRoot(String rootNode) {
         class_ rootClass = program.classTable.classByName.get(rootNode);
 
-        buildChildren();
+        if (program.classTable.childClasses.get(rootNode).isEmpty()) return;
+
+        for (String childClass : program.classTable.childClasses.get(rootNode)) {
+            buildChildren(childClass);
+        }
     }
 
-    private void buildChildren() {
+    private void buildChildren(String childClassName) {
+        class_ thisClass = program.classTable.classByName.get(childClassName);
 
+        if (thisClass == null) return;
 
+        for (Enumeration e = thisClass.features.getElements(); e.hasMoreElements();) {
+
+        }
     }
 }
