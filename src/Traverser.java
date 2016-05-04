@@ -56,6 +56,7 @@ class Traverser {
                 }
             }
 
+            
             // Insert the now filled methods table into the methods collection
             program.methodsByObject.put(currentClass_.name.toString(), methodsTable);
         }
@@ -117,32 +118,35 @@ class Traverser {
     	// Determine the type of expression
     	ExpressionType expressionType = ExpressionType.valueOf( expression.getClass().getSimpleName() );
         System.out.println( "Expression Type: " + expressionType.toString() );
-        if( expression.get_type() != null )
-        	System.out.print( "   Exact Type: " + expression.get_type().toString() );
+
     	switch( expressionType ) {
             case assign:
+            	/** Variables - name: Symbol, body: Expression **/
             	// Traverse assignment to find type
             	Expression assignment = ( (assign)expression ).expr;
-            	
-            	// Temp to help understand assign
-            	expression.dump_with_types(System.out,0);
             	
                 traverse( assignment, objectsTable, class_ );
                 
                 expression.set_type( assignment.get_type() );
+                
                 break;
 
             case static_dispatch:
-                // What is static dispatch?
+            	/** Variables - expr: Expression, type_name: Symbol, name: Symbol, actual: Expression **/
+                
+            	// What is static dispatch?
             	//TODO
                 break;
                 
             case dispatch:
-            	// What is dispatch?
+            	/** Variables - expr: Expression, name: Symbol, actual: Expression **/
+            	
             	//TODO
             	break;
             	
             case cond:
+            	/** Variables - pred: Expression, then_exp: Expression, else_exp: Expression **/
+            	
             	// A condition has a predicate, then expression, and else expression
             	Expression if_ = ( (cond)expression ).pred;
             	Expression then_ = ( (cond)expression ).then_exp;
@@ -160,33 +164,66 @@ class Traverser {
             	break;
             	
             case loop:
+            	/** Variables - pred: Expression, body: Expression **/
+            	
+            	loop loopExpr = (loop)expression;
             	// a loop should have its own scope
             	objectsTable.enterScope();
             	// a loop has a predicate expression and a body expression. We need to traverse these.
-            	traverse( ((loop)expression).pred, objectsTable, class_ );
-            	traverse( ((loop)expression).body, objectsTable, class_ );
+            	traverse( loopExpr.pred, objectsTable, class_ );
+            	traverse( loopExpr.body, objectsTable, class_ );
             	// exit scope
             	objectsTable.exitScope();
             	break;
             	
             case typcase:
-            	//TODO
+            	/** Variables - expr: Expression, cases: Cases **/
+            	
+            	typcase caseExpr = (typcase)expression;
+            	caseExpr.dump_with_types(System.out,0);
+            	
+            	// traverse expression
+            	traverse(caseExpr.expr, objectsTable, class_);
+	
+	            // traverse through each case
+	            for ( Enumeration elements = caseExpr.cases.getElements(); elements.hasMoreElements(); ){
+	                objectsTable.enterScope();
+	                
+	                branch elementCase = (branch) elements.nextElement();
+	                objectsTable.addId( elementCase.name, elementCase.type_decl );
+	                traverse(elementCase.expr, objectsTable, class_);
+	                
+	                objectsTable.exitScope();
+	            }
+	            
             	break;
             	
             case block:
-            	//TODO
+            	/** Variables - body: Expression **/
+            	
+            	objectsTable.enterScope();
+            	// Traverse the block of code
+            	for (Enumeration expressions = ((block)expression).body.getElements(); expressions.hasMoreElements();) {
+                    Expression blockExpression = (Expression) expressions.nextElement();
+                    traverse( blockExpression, objectsTable, class_ );
+                    expression.set_type( blockExpression.get_type() );
+            	}
+            	objectsTable.exitScope();
             	break;
             	
             case let:
+            	/** Variables - identifier: Symbol, type_decl: Symbol, inti: Expression, body: Expression **/
+            	
+            	let letExpr = (let)expression;
             	//TODO: let should have its own scope, initial expression, and body expression
             	objectsTable.enterScope();
 
             	// add to object table
-            	objectsTable.addId( ((let)expression).identifier, ((let)expression).type_decl );
+            	objectsTable.addId( letExpr.identifier, letExpr.type_decl );
             	
             	// traverse its initial expression and body
-            	traverse( ((let)expression).init, objectsTable, class_ );
-            	traverse( ((let)expression).body, objectsTable, class_ );
+            	traverse( letExpr.init, objectsTable, class_ );
+            	traverse( letExpr.body, objectsTable, class_ );
 
             	// set type
             	
@@ -195,88 +232,127 @@ class Traverser {
             	break;
             	
             case plus:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Int );
             	traverse( ((plus)expression).e1, objectsTable, class_ );
             	traverse( ((plus)expression).e2, objectsTable, class_ );
             	break;
             	
             case sub:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Int );
             	traverse( ((sub)expression).e1, objectsTable, class_ );
             	traverse( ((sub)expression).e2, objectsTable, class_ );
             	break;
             	
             case mul:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Int );
             	traverse( ((mul)expression).e1, objectsTable, class_ );
             	traverse( ((mul)expression).e2, objectsTable, class_ );
             	break;
             	
             case divide:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Int );
             	traverse( ((divide)expression).e1, objectsTable, class_ );
             	traverse( ((divide)expression).e2, objectsTable, class_ );
             	break;
             	
             case neg:
+            	/** Variables - e1: Expression **/
+            	
             	expression.set_type( TreeConstants.Int );
             	traverse( ((neg)expression).e1, objectsTable, class_ );
             	break;
             	
             case lt:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((lt)expression).e1, objectsTable, class_ );
             	traverse( ((lt)expression).e2, objectsTable, class_ );
             	break;
             	
             case eq:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((eq)expression).e1, objectsTable, class_ );
             	traverse( ((eq)expression).e2, objectsTable, class_ );
             	break;
             	
             case leq:
+            	/** Variables - e1: Expression, e2: Expression **/
+            	
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((leq)expression).e1, objectsTable, class_ );
             	traverse( ((leq)expression).e2, objectsTable, class_ );
             	break;
             	
             case comp:
+            	/** Variables - e1: Expression **/
+            	
             	// compare?
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((comp)expression).e1, objectsTable, class_ );
             	break;
             	
             case int_const:
+            	/** Variables - token: Symbol **/
+            	
             	//TODO token
             	expression.set_type( TreeConstants.Int );
             	break;
             	
             case bool_const:
+            	/** Variables - val: Boolean **/
+            	
             	//TODO token
             	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case string_const:
+            	/** Variables - token: Symbol **/
+            	
             	//TODO token
             	expression.set_type( TreeConstants.Str );
             	break;
             	
             case new_:
-            	//TODO type_name
+            	/** Variables - type_name: Symbol **/
+
+            	expression.set_type( ((new_)expression).type_name );
             	break;
             	
             case isvoid:
-            	//TODO e1
+            	/** Variables - e1: Expression **/
+
             	expression.set_type( TreeConstants.Bool );
+            	traverse( ((isvoid)expression).e1, objectsTable, class_);
             	break;
             	
             case no_expr:
+            	/** Variables - **/
             	//TODO is this saying there is nothing in the expression?
             	break;
             	
             case object:
+            	/** Variables - name: Symbol **/
+            	
             	//TODO
+            	//Find the type of this object
+            	if( objectsTable.lookup( ((object)expression).name ) != null )
+					expression.set_type( (AbstractSymbol) objectsTable.lookup( ((object)expression).name ) );
+            	else if( ((object)expression).name == TreeConstants.self )
+            		expression.set_type( TreeConstants.SELF_TYPE );
+            	else
+            		expression.set_type( TreeConstants.Object_ );
+            	
             	break;
             	
         }
@@ -292,9 +368,6 @@ class Traverser {
         // Enter the table's scope
         objectsTable.enterScope();
 
-        // Get the class's name, we'll use it several times
-        String className = class_.name.toString();
-
         // Get the method's name, we'll also use it several times
         String methodName = method.name.toString();
 
@@ -308,6 +381,7 @@ class Traverser {
         // Enumerate over the formals in the Method
         // We want to add each formal (i.e. parameter) to the
         // collection of <code>AbstractSymbol</code> for this Method
+        String methodDef = "Method Def: " + method.name +"( ";
         for (Enumeration e = method.formals.getElements(); e.hasMoreElements();) {
             // Get the current formal from the enumeration
             formal currFormal = ((formal)e.nextElement());
@@ -317,14 +391,17 @@ class Traverser {
                 // Formal is already in the objects table
                 program.classTable.semantError(class_.filename, currFormal).println("Parameter " + currFormal.name.toString() + " has already been defined.");
             }
-
+            
+            methodDef += currFormal.name + " : " + currFormal.type_decl + ", ";
+            
             // Add the current formal to the objects collection
             objectsTable.addId(currFormal.name, currFormal.type_decl);
 
             // Add the current Formal's type to the Method's table
             methodsTable.get(methodName).add(currFormal.type_decl);
         }
-
+        methodDef = methodDef.substring(0, methodDef.length() -2 ).concat(" )"); 
+        System.out.println( methodDef );
         // Add the current Method's return type to the Method's table
         // This should, then, be the very last item added to the list
         methodsTable.get(methodName).add(method.return_type);
