@@ -213,7 +213,7 @@ class Cases extends ListNode {
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
 class program extends Program {
     private Classes classes;
-    ClassTable classTable;
+    public ClassTable classTable;
 
     /**
      * <code>objects</code> represents our collection of <code>SymbolTable</code>s for
@@ -232,6 +232,7 @@ class program extends Program {
      * Methods by their containing Object.
      */
     protected LinkedHashMap<String, LinkedHashMap<String, List<AbstractSymbol>>> methodsByObject;
+
 
     /** Creates "program" AST node. 
       *
@@ -308,7 +309,7 @@ class program extends Program {
          * our basic classes
          */
         System.out.println( "\nTraversing Basic Classes..." ); 
-        Traverser traverser = new Traverser(classTable.basicClasses);
+        Traverser traverser = new Traverser(classTable.basicClasses, ClassType.Basic);
         // Invoke the traversal
         traverser.traverse(this);
 
@@ -317,12 +318,22 @@ class program extends Program {
          * complex classes
          */
         System.out.println( "\n\nTraversing Complex Classes..." );
-        Traverser complexTraverser = new Traverser(classes);
+        Traverser complexTraverser = new Traverser(classes, ClassType.Complex);
         // Invoke the traversal
         complexTraverser.traverse(this);
+
+        // Check for errors post-traversal
+        if (classTable.errors()) {
+            System.err.println("Compilation halted due to static semantic errors.");
+            System.exit(1);
+        }
     }
 }
 
+enum ClassType {
+    Basic,
+    Complex
+}
 
 /** Defines AST constructor 'class_'.
     <p>

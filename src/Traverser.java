@@ -10,29 +10,32 @@ import java.util.List;
 class Traverser {
     private Classes classes;
     private program program;
+    private ClassType classType;
 
     /**
      * Initializes a new instance of <code>Traverser</code> with the specified
      * Classes container.
      * @param classes Container object for a collection of Classes.
      */
-    Traverser(Classes classes) {
+    Traverser(Classes classes, ClassType classType) {
         this.classes = classes;
+        this.classType = classType;
     }
 
     /**
      * Traverses the AST and builds out the respective symbol tables, performing
      * scoping and type checking.
-     * @param program The program running as the analyzer with requisite members.
+     * @param origProgram The program running as the analyzer with requisite members.
      */
-    void traverse(program program) {
-        this.program = program;
+    void traverse(program origProgram) {
+        this.program = origProgram;
 
-        // start building inheritance tree
-        InheritanceTree tree = new InheritanceTree( program );
-        tree.build();
-        
-        
+        if (classType == ClassType.Complex) {
+            // start building inheritance tree
+            InheritanceTree tree = new InheritanceTree(this.program);
+            tree.startBuild();
+        }
+
         // traverse through each class
         for (Enumeration e = classes.getElements(); e.hasMoreElements();) {
             class_ currentClass_ = (class_)e.nextElement();
@@ -56,7 +59,7 @@ class Traverser {
                         break;
 
                     case method:
-                        serviceMethod((method)feature, objectsTable, methodsTable, program.classTable, currentClass_);
+                        serviceMethod((method)feature, objectsTable, methodsTable, origProgram.classTable, currentClass_);
                         break;
 
                 }
@@ -64,52 +67,54 @@ class Traverser {
 
             
             // Insert the now filled methods table into the methods collection
-            program.methodsByObject.put(currentClass_.name.toString(), methodsTable);
+            origProgram.methodsByObject.put(currentClass_.name.toString(), methodsTable);
         }
-        
-        // Check for Main errors
-        // we need to check if the program has a main class and main method
-        int mainClassCount = 0;
-        int mainMethodCount = 0;
-        boolean mainClassHasMainMethod = false;
-        for (Enumeration e = classes.getElements(); e.hasMoreElements();) {
-            class_ currentClass_ = (class_)e.nextElement();
 
-            // Get Main classes count
-            if( currentClass_.name.equals( TreeConstants.Main ) ){
-            	mainClassCount++;
-            }
-            
-            // Check for main() methods
-            for (Enumeration features = currentClass_.features.getElements(); features.hasMoreElements();) {
-                Feature feature = (Feature)features.nextElement();
-                if( feature instanceof method ){
-                	// if method = main()
-                	if( ((method)feature).name.equals( TreeConstants.main_meth ) ){
-                		mainMethodCount++;
-                		// if main method is inside main class
-                		if( currentClass_.name.equals( TreeConstants.Main ) ){
-                        	mainClassHasMainMethod = true;
-                        }else{
-                        	program.classTable.semantError( currentClass_.filename, currentClass_ ).println( "Main class needs a main method" );
+        if (classType == ClassType.Complex) {
+            // Check for Main errors
+            // we need to check if the program has a main class and main method
+            int mainClassCount = 0;
+            int mainMethodCount = 0;
+            boolean mainClassHasMainMethod = false;
+            for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
+                class_ currentClass_ = (class_) e.nextElement();
+
+                // Get Main classes count
+                if (currentClass_.name.equals(TreeConstants.Main)) {
+                    mainClassCount++;
+                }
+
+                // Check for main() methods
+                for (Enumeration features = currentClass_.features.getElements(); features.hasMoreElements(); ) {
+                    Feature feature = (Feature) features.nextElement();
+                    if (feature instanceof method) {
+                        // if method = main()
+                        if (((method) feature).name.equals(TreeConstants.main_meth)) {
+                            mainMethodCount++;
+                            // if main method is inside main class
+                            if (currentClass_.name.equals(TreeConstants.Main)) {
+                                mainClassHasMainMethod = true;
+                            } else {
+                                origProgram.classTable.semantError(currentClass_.filename, currentClass_).println("Main class needs a main method");
+                            }
                         }
-                	}
+                    }
                 }
             }
+
+            // Call main class errors
+            if (mainClassCount == 0)
+                origProgram.classTable.semantError().println("Couldnt find a Main class");
+            else if (mainClassCount > 1)
+                origProgram.classTable.semantError().println("Can only have one Main class");
+
+            // Call main method errors
+            if (mainMethodCount == 0)
+                origProgram.classTable.semantError().println("Couldnt find a main() method");
+            else if (mainMethodCount > 1)
+                origProgram.classTable.semantError().println("Too may definitions for main() method");
+
         }
-        
-        // Call main class errors
-        if( mainClassCount == 0 )
-        	program.classTable.semantError().println("Couldnt find a Main class");
-        else if( mainClassCount > 1 )
-        	program.classTable.semantError().println("Can only have one Main class");
-        
-        // Call main method errors
-        if( mainMethodCount == 0 )
-        	program.classTable.semantError().println("Couldnt find a main() method");
-        else if( mainMethodCount > 1 )
-        	program.classTable.semantError().println("Too may definitions for main() method");
-        
     }
 
     /**

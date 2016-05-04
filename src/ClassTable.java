@@ -10,9 +10,9 @@ import java.util.*;
 class ClassTable {
     private int semantErrors;
     private PrintStream errorStream;
-	Classes basicClasses;
-	LinkedHashMap<String, class_> classByName;
-	LinkedHashMap<String, List<String>> childClasses;
+	public Classes basicClasses;
+	public LinkedHashMap<String, class_> classByName;
+	public LinkedHashMap<String, List<String>> childClasses;
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
