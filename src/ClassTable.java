@@ -1,3 +1,5 @@
+import sun.reflect.generics.tree.Tree;
+
 import javax.swing.plaf.metal.MetalIconFactory;
 import java.io.PrintStream;
 import java.util.*;
@@ -210,6 +212,8 @@ class ClassTable {
 		childClasses = new LinkedHashMap<>();
 
 		installBasicClasses();
+
+        fillChildClasses(cls);
     }
 
     /** Prints line number and file name of the given class.
@@ -257,7 +261,7 @@ class ClassTable {
 	return semantErrors != 0;
     }
 
-	public void fillChildClasses(Classes classes) {
+	private void fillChildClasses(Classes classes) {
 		// Add all existing classes, other than Object, to Object's list of children
 		// At this time, it would only be the basic classes
 		for (String className : childClasses.keySet()) {
@@ -277,6 +281,51 @@ class ClassTable {
 			classByName.put(currentClass_.name.toString(), currentClass_);
 
 			String parentClass = currentClass_.parent.toString();
+			if (!childClasses.containsKey(parentClass)) {
+				childClasses.put(parentClass, new ArrayList<String>());
+			}
+
+			childClasses.get(parentClass).add(currentClass_.name.toString());
 		}
+
+        for (String parentClass : childClasses.keySet()) {
+            if (!classByName.containsKey(parentClass)) {
+                for (String childClass : childClasses.get(parentClass)) {
+                    this.semantError(classByName.get(childClass)).println("Class " + childClass + " is inheriting from undefined class, " + parentClass + ".");
+                }
+
+                childClasses.remove(parentClass);
+            }
+        }
+
+        if (!childClasses.get(TreeConstants.Str.toString()).isEmpty()) {
+            String errorString = "Class(s) ";
+            for (String childClassName : childClasses.get(TreeConstants.Str.toString())) {
+                errorString += childClassName + ", ";
+            }
+            errorString = errorString.substring(0, errorString.length() - 2);
+            errorString += " inherits from primitive String.";
+            this.semantError(classByName.get(TreeConstants.Str.toString())).println(errorString);
+        }
+
+        if (!childClasses.get(TreeConstants.Int.toString()).isEmpty()) {
+            String errorString = "Class(s) ";
+            for (String childClassName : childClasses.get(TreeConstants.Int.toString())) {
+                errorString += childClassName + ", ";
+            }
+            errorString = errorString.substring(0, errorString.length() - 2);
+            errorString += " inherits from primitive Int.";
+            this.semantError(classByName.get(TreeConstants.Int.toString())).println(errorString);
+        }
+
+        if (!childClasses.get(TreeConstants.Bool.toString()).isEmpty()) {
+            String errorString = "Class(s) ";
+            for (String childClassName : childClasses.get(TreeConstants.Bool.toString())) {
+                errorString += childClassName + ", ";
+            }
+            errorString = errorString.substring(0, errorString.length() - 2);
+            errorString += " inherits from primitive Boolean.";
+            this.semantError(classByName.get(TreeConstants.Bool.toString())).println(errorString);
+        }
 	}
 }
