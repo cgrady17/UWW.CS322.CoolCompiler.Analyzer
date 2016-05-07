@@ -1,3 +1,5 @@
+import sun.reflect.generics.tree.Tree;
+
 import java.io.PrintStream;
 import java.util.*;
 
@@ -257,6 +259,21 @@ class ClassTable {
     /** Returns true if there are any static semantic errors. */
     public boolean errors() {
 	return semantErrors != 0;
+    }
+
+    /**
+     * Provides the name of the Parent Class to the specified Class.
+     * @param childsName The name of the Child class whose Parent should be provided.
+     * @return The name of the Parent class.
+     */
+	public String getParentsName(String childsName) {
+        if (Objects.equals(childsName, TreeConstants.Object_.toString())) return TreeConstants.No_class.toString();
+
+        for (String parentName : childClasses.keySet()) {
+            if (childClasses.get(parentName).indexOf(childsName) > -1) return parentName;
+        }
+
+        return TreeConstants.No_class.toString();
     }
 
     /**
