@@ -316,11 +316,11 @@ class program extends Program {
          * Instantiate our Traverses that will be use to traverse
          * complex classes
          */
-        System.out.println( "\n\nTraversing Complex Classes..." );
+        System.out.println( "\n\nTraversing Complex Classes..." );  
         Traverser complexTraverser = new Traverser(classes, ClassType.Complex);
         // Invoke the traversal
         complexTraverser.traverse(this);
-
+  
         // Check for errors post-traversal
         if (classTable.errors()) {
             System.err.println("Compilation halted due to static semantic errors.");

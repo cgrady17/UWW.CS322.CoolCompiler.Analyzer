@@ -113,7 +113,9 @@ class Traverser {
                 origProgram.classTable.semantError().println("Couldnt find a main() method");
             else if (mainMethodCount > 1)
                 origProgram.classTable.semantError().println("Too may definitions for main() method");
-
+            
+            if( !mainClassHasMainMethod )
+            	origProgram.classTable.semantError().println("main() method is not inside Main class");
         }
     }
 
@@ -134,7 +136,9 @@ class Traverser {
 		}
     	
         // We now want to traverse the method
-    	System.out.println( "Traversing method expression in " + method.name + " at line " + method.getLineNumber() );
+    	if( classType == ClassType.Complex ){
+    		System.out.println( "Traversing method expression in " + method.name + " at line " + method.getLineNumber() );
+    	}
         traverse(method, objectsTable, methodsTable, currentClass_);
     }
 
@@ -157,9 +161,11 @@ class Traverser {
         objectsTable.addId(attribute.name, attribute.type_decl);
 
         // We now need to traverse the expression
-        System.out.println( "Traversing attr expression in " + attribute.name + " at line " + attribute.getLineNumber() );
-        attribute.dump(System.out, 0);
-        traverse(attribute.init, objectsTable);
+        if( classType == ClassType.Complex ){
+        	System.out.println( "Traversing attr expression in " + attribute.name + " at line " + attribute.getLineNumber() );
+        }
+        //attribute.dump(System.out, 0);
+        traverse(attribute.init, objectsTable, class_);
     }
 
     /** Expression traversing
@@ -167,11 +173,13 @@ class Traverser {
      * @param Expression The expression being traversed
      * @param objectsTable The symbol table to which the attribute may be added.
      */
-    private void traverse(Expression expression, SymbolTable objectsTable) {
+    private void traverse(Expression expression, SymbolTable objectsTable, class_ currentClass ) {
 
     	// Determine the type of expression
     	ExpressionType expressionType = ExpressionType.valueOf( expression.getClass().getSimpleName() );
-        System.out.println( "Expression Type: " + expressionType.toString() );
+    	if( classType == ClassType.Complex ){
+    		System.out.println( "Expression Type: " + expressionType.toString() );
+    	}
 
     	switch( expressionType ) {
             case assign:
@@ -179,22 +187,103 @@ class Traverser {
             	// Traverse assignment to find type
             	Expression assignment = ( (assign)expression ).expr;
             	
-                traverse( assignment, objectsTable);
+                traverse( assignment, objectsTable, currentClass);
                 
                 expression.set_type( assignment.get_type() );
                 
                 break;
 
             case static_dispatch:
-            	/** Variables - expr: Expression, type_name: Symbol, name: Symbol, actual: Expression **/
-                
-            	// What is static dispatch?
+            	/** Variables - expr: Expression, type_name: Symbol, name: Symbol, actual: Expressions **/
+                /** <expr>.<id>(<expr>,...,<expr>)
+                	The other forms of dispatch are:
+					<id>(<expr>,...,<expr>)
+					<expr>@<type>.id(<expr>,...,<expr>)
+					We need to do several checkings here such as:
+					 Checking if the method exists
+					 Checking the formals(amount and type)
+					 Check if the types conform
+                 */
+            	static_dispatch stat_dispatch = (static_dispatch)expression;
+            	traverse( stat_dispatch.expr, objectsTable, currentClass);
+            	for (int i = 0; i < stat_dispatch.actual.getLength(); i++) {
+            		traverse( (Expression) stat_dispatch.actual.getNth(i), objectsTable, currentClass );
+            	}
+            	stat_dispatch.dump_with_types(System.out, 0);
+            	
+            	System.out.println("Dispatch Name: " + stat_dispatch.name + " Type: " + stat_dispatch.type_name);
+            	System.out.println("Dispatch Expression Name: " + stat_dispatch.expr.toString() + " Type: " + stat_dispatch.expr.get_type());
+            	String formals = " Formals: ";
+            	for (int i = 0; i < stat_dispatch.actual.getLength(); i++) {
+            	    formals += stat_dispatch.actual.getNth(i) + ", ";
+            	}
+            	formals = formals.substring(0, formals.length() -2 ); 
+            	System.out.println("Dispatch Actual Name: " + stat_dispatch.actual.toString() + formals);
+            	// Check if the expressions conform
+            	
+            	
+
+            	// expr
             	//TODO
                 break;
                 
             case dispatch:
-            	/** Variables - expr: Expression, name: Symbol, actual: Expression **/
+            	/** Variables - expr: Expression, name: Symbol, actual: Expressions **/
+            	/** <expr>.<id>(<expr>,...,<expr>)
+	            	The other forms of dispatch are:
+					<id>(<expr>,...,<expr>)
+					<expr>@<type>.id(<expr>,...,<expr>)
+            	*/
+            	dispatch dispatch = (dispatch)expression;
+            	// traverse the identifier
+            	traverse( dispatch.expr, objectsTable, currentClass);
+            	// traverse through each formal parameter, record each type
+            	List<AbstractSymbol> parameterTypes = new ArrayList<AbstractSymbol>();
+            	for (int i = 0; i < dispatch.actual.getLength(); i++) {
+            		traverse( (Expression) dispatch.actual.getNth(i), objectsTable, currentClass );
+            		parameterTypes.add( ((Expression)dispatch.actual.getNth(i)).get_type() );
+            	}
             	
+            	if( classType == ClassType.Complex ){
+	            	dispatch.dump_with_types(System.out, 0);
+	            	
+	            	System.out.println("Dispatch Method Name: " + dispatch.name + " Type: " + dispatch.get_type());
+	            	System.out.println("Dispatch Expression Id: " + dispatch.expr.toString() + " Type: " + dispatch.expr.get_type());
+	            	System.out.println("Dispatch Formals Expressions: " + dispatch.actual.toString());
+            	}
+            	AbstractSymbol type = dispatch.expr.get_type();
+            	AbstractSymbol className = type;
+            	if( type.str.equals(TreeConstants.SELF_TYPE) ){
+            		className = currentClass.name;
+            		dispatch.set_type( className );
+            	}
+            	/**
+            	// Testing ---- cant seem to find methods or even classes
+            	System.out.println("0.85" + className);
+            	for( int i = 0; i < program.methodsByObject.size(); i++ )
+            		System.out.println(program.methodsByObject.get(i));
+            	System.out.println("0.95");
+            	ArrayList<AbstractSymbol> actualMethodTypes = (ArrayList<AbstractSymbol>) program.methodsByObject.get(className).get(dispatch.name);
+
+            	// End Testing -----
+            	// does this method exist?
+            	if( (program.methodsByObject.get( className ).containsKey( dispatch.name) == false ) ){
+            		program.classTable.semantError().println("Undefined method " + dispatch.name + " at " + expression.lineNumber );
+            	}else{
+            		System.out.println("2");
+            		// check the amount and types of formals
+            		if( actualMethodTypes.size() != parameterTypes.size() ){
+            			program.classTable.semantError().println("The method " + dispatch.name + " at " + expression.lineNumber + " has the wrong amount of arguments" );
+            		}else{
+            			System.out.println("3");
+	            		for (int i = 0; i < actualMethodTypes.size(); i++) {
+	                		if( actualMethodTypes.get(i) != parameterTypes.get(i) ){
+	                			System.out.println("4");
+	                			program.classTable.semantError().println("Method call " + dispatch.name + " at " + expression.lineNumber + " has the wrong type of arguments" );
+	                		}
+	                	}
+            		}
+            	}**/
             	//TODO
             	break;
             	
@@ -210,9 +299,9 @@ class Traverser {
             	expression.dump_with_types(System.out,0);
             	
             	// We need to traverse through each of these
-            	traverse( if_ , objectsTable);
-            	traverse( then_ , objectsTable);
-            	traverse( else_ , objectsTable);
+            	traverse( if_ , objectsTable, currentClass );
+            	traverse( then_ , objectsTable, currentClass );
+            	traverse( else_ , objectsTable, currentClass );
             	// If-else statements should go into a new scope right?
             	//TODO
             	break;
@@ -224,8 +313,8 @@ class Traverser {
             	// a loop should have its own scope
             	objectsTable.enterScope();
             	// a loop has a predicate expression and a body expression. We need to traverse these.
-            	traverse( loopExpr.pred, objectsTable);
-            	traverse( loopExpr.body, objectsTable);
+            	traverse( loopExpr.pred, objectsTable, currentClass );
+            	traverse( loopExpr.body, objectsTable, currentClass );
             	// exit scope
             	objectsTable.exitScope();
             	break;
@@ -237,7 +326,7 @@ class Traverser {
             	caseExpr.dump_with_types(System.out,0);
             	
             	// traverse expression
-            	traverse(caseExpr.expr, objectsTable);
+            	traverse(caseExpr.expr, objectsTable, currentClass );
 	
 	            // traverse through each case
 	            for ( Enumeration elements = caseExpr.cases.getElements(); elements.hasMoreElements(); ){
@@ -245,7 +334,7 @@ class Traverser {
 	                
 	                branch elementCase = (branch) elements.nextElement();
 	                objectsTable.addId( elementCase.name, elementCase.type_decl );
-	                traverse(elementCase.expr, objectsTable);
+	                traverse(elementCase.expr, objectsTable, currentClass );
 	                
 	                objectsTable.exitScope();
 	            }
@@ -259,7 +348,7 @@ class Traverser {
             	// Traverse the block of code
             	for (Enumeration expressions = ((block)expression).body.getElements(); expressions.hasMoreElements();) {
                     Expression blockExpression = (Expression) expressions.nextElement();
-                    traverse( blockExpression, objectsTable);
+                    traverse( blockExpression, objectsTable, currentClass );
                     expression.set_type( blockExpression.get_type() );
             	}
             	objectsTable.exitScope();
@@ -276,8 +365,8 @@ class Traverser {
             	objectsTable.addId( letExpr.identifier, letExpr.type_decl );
             	
             	// traverse its initial expression and body
-            	traverse( letExpr.init, objectsTable);
-            	traverse( letExpr.body, objectsTable);
+            	traverse( letExpr.init, objectsTable, currentClass );
+            	traverse( letExpr.body, objectsTable, currentClass );
 
             	// set type
             	
@@ -289,63 +378,63 @@ class Traverser {
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Int );
-            	traverse( ((plus)expression).e1, objectsTable);
-            	traverse( ((plus)expression).e2, objectsTable);
+            	traverse( ((plus)expression).e1, objectsTable, currentClass );
+            	traverse( ((plus)expression).e2, objectsTable, currentClass );
             	break;
             	
             case sub:
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Int );
-            	traverse( ((sub)expression).e1, objectsTable);
-            	traverse( ((sub)expression).e2, objectsTable);
+            	traverse( ((sub)expression).e1, objectsTable, currentClass );
+            	traverse( ((sub)expression).e2, objectsTable, currentClass );
             	break;
             	
             case mul:
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Int );
-            	traverse( ((mul)expression).e1, objectsTable);
-            	traverse( ((mul)expression).e2, objectsTable);
+            	traverse( ((mul)expression).e1, objectsTable, currentClass );
+            	traverse( ((mul)expression).e2, objectsTable, currentClass );
             	break;
             	
             case divide:
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Int );
-            	traverse( ((divide)expression).e1, objectsTable);
-            	traverse( ((divide)expression).e2, objectsTable);
+            	traverse( ((divide)expression).e1, objectsTable, currentClass );
+            	traverse( ((divide)expression).e2, objectsTable, currentClass );
             	break;
             	
             case neg:
             	/** Variables - e1: Expression **/
             	
             	expression.set_type( TreeConstants.Int );
-            	traverse( ((neg)expression).e1, objectsTable);
+            	traverse( ((neg)expression).e1, objectsTable, currentClass );
             	break;
             	
             case lt:
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Bool );
-            	traverse( ((lt)expression).e1, objectsTable);
-            	traverse( ((lt)expression).e2, objectsTable);
+            	traverse( ((lt)expression).e1, objectsTable, currentClass );
+            	traverse( ((lt)expression).e2, objectsTable, currentClass );
             	break;
             	
             case eq:
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Bool );
-            	traverse( ((eq)expression).e1, objectsTable);
-            	traverse( ((eq)expression).e2, objectsTable);
+            	traverse( ((eq)expression).e1, objectsTable, currentClass );
+            	traverse( ((eq)expression).e2, objectsTable, currentClass );
             	break;
             	
             case leq:
             	/** Variables - e1: Expression, e2: Expression **/
             	
             	expression.set_type( TreeConstants.Bool );
-            	traverse( ((leq)expression).e1, objectsTable);
-            	traverse( ((leq)expression).e2, objectsTable);
+            	traverse( ((leq)expression).e1, objectsTable, currentClass );
+            	traverse( ((leq)expression).e2, objectsTable, currentClass );
             	break;
             	
             case comp:
@@ -353,7 +442,7 @@ class Traverser {
             	
             	// compare?
             	expression.set_type( TreeConstants.Bool );
-            	traverse( ((comp)expression).e1, objectsTable);
+            	traverse( ((comp)expression).e1, objectsTable, currentClass );
             	break;
             	
             case int_const:
@@ -387,7 +476,7 @@ class Traverser {
             	/** Variables - e1: Expression **/
 
             	expression.set_type( TreeConstants.Bool );
-            	traverse( ((isvoid)expression).e1, objectsTable);
+            	traverse( ((isvoid)expression).e1, objectsTable, currentClass );
             	break;
             	
             case no_expr:
@@ -435,6 +524,7 @@ class Traverser {
         // Enumerate over the formals in the Method
         // We want to add each formal (i.e. parameter) to the
         // collection of <code>AbstractSymbol</code> for this Method
+        
         String methodDef = "Method Def: " + method.name +"( ";
         for (Enumeration e = method.formals.getElements(); e.hasMoreElements();) {
             // Get the current formal from the enumeration
@@ -455,13 +545,15 @@ class Traverser {
             methodsTable.get(methodName).add(currFormal.type_decl);
         }
         methodDef = methodDef.substring(0, methodDef.length() -2 ).concat(" )"); 
-        System.out.println( methodDef );
+        if( classType == ClassType.Complex ){
+        	System.out.println( methodDef );
+        }
         // Add the current Method's return type to the Method's table
         // This should, then, be the very last item added to the list
         methodsTable.get(methodName).add(method.return_type);
 
         // Traverse the method's expression
-        traverse(method.expr, objectsTable);
+        traverse(method.expr, objectsTable, class_ );
 
         // Exit the symbol table's scope
         objectsTable.exitScope();
