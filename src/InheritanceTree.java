@@ -61,44 +61,47 @@ public class InheritanceTree {
         LinkedHashMap<String, List<AbstractSymbol>> classMethods = program.methodsByObject.get(childClassName);
         LinkedHashMap<String, List<AbstractSymbol>> parentMethods = program.methodsByObject.get(parentName);
 
-        // Enumerate over each of the Features of this class
-        for (Enumeration e = thisClass.features.getElements(); e.hasMoreElements(); ) {
-            Feature thisFeature = (Feature) e.nextElement();
+        if (parentTable != null) {
+            // Enumerate over each of the Features of this class
+            for (Enumeration e = thisClass.features.getElements(); e.hasMoreElements(); ) {
+                Feature thisFeature = (Feature) e.nextElement();
 
-            FeatureType featureType = FeatureType.valueOf(thisFeature.getClass().getSimpleName());
-            switch (featureType) {
-                case attr:
-                    if (parentTable.lookup(((attr) thisFeature).name) != null) {
-                        program.classTable.semantError(thisClass.filename, thisFeature).println("Attribute " + ((attr) thisFeature).name.toString() + " is already defined and cannot be overriden.");
+                FeatureType featureType = FeatureType.valueOf(thisFeature.getClass().getSimpleName());
+                switch (featureType) {
+                    case attr:
+                        if (parentTable.lookup(((attr) thisFeature).name) != null) {
+                            program.classTable.semantError(thisClass.filename, thisFeature).println("Attribute " + ((attr) thisFeature).name.toString() + " is already defined and cannot be overriden.");
 
-                        // TODO: Remove from this Class' object symbol table
-                    }
-                    break;
-                case method:
-                    method thisMethod = (method) thisFeature;
-                    if (parentMethods != null && parentMethods.containsKey(thisMethod.name.toString())) {
-                        if (classMethods.get(thisMethod.name.toString()).size() != parentMethods.get(thisMethod.name.toString()).size()) {
-                            program.classTable.semantError(thisClass.filename, thisMethod).println("Method " + thisMethod.name.toString() + " has an invalid number of parameters.");
-                        } else {
-                            for (int i = 0; i < classMethods.get(thisMethod.name.toString()).size(); i++) {
-                                if (classMethods.get(thisMethod.name.toString()).get(i) != parentMethods.get(thisMethod.name.toString()).get(i)) {
-                                    program.classTable.semantError(thisClass.filename, thisMethod).println("Type mismatch of parameters on inherited method " + thisMethod.name.toString() + ".");
+                            // TODO: Remove from this Class' object symbol table
+                        }
+                        break;
+                    case method:
+                        method thisMethod = (method) thisFeature;
+                        if (parentMethods != null && parentMethods.containsKey(thisMethod.name.toString())) {
+                            if (classMethods.get(thisMethod.name.toString()).size() != parentMethods.get(thisMethod.name.toString()).size()) {
+                                program.classTable.semantError(thisClass.filename, thisMethod).println("Method " + thisMethod.name.toString() + " has an invalid number of parameters.");
+                            } else {
+                                for (int i = 0; i < classMethods.get(thisMethod.name.toString()).size(); i++) {
+                                    if (classMethods.get(thisMethod.name.toString()).get(i) != parentMethods.get(thisMethod.name.toString()).get(i)) {
+                                        program.classTable.semantError(thisClass.filename, thisMethod).println("Type mismatch of parameters on inherited method " + thisMethod.name.toString() + ".");
 
-                                    classMethods.remove(thisMethod.name.toString());
-                                    break;
+                                        classMethods.remove(thisMethod.name.toString());
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                    break;
+                        break;
+                }
             }
-        }
 
-        // TODO: Copy classObjects to parentObjects (or vice versa)
+            // TODO: Copy classObjects to parentObjects (or vice versa)
 
-        if (parentMethods != null) {
-            for (String methodName : parentMethods.keySet()) {
-                if (!classMethods.containsKey(methodName)) classMethods.put(methodName, parentMethods.get(methodName));
+            if (parentMethods != null) {
+                for (String methodName : parentMethods.keySet()) {
+                    if (!classMethods.containsKey(methodName))
+                        classMethods.put(methodName, parentMethods.get(methodName));
+                }
             }
         }
 

@@ -253,21 +253,21 @@ class Traverser {
             	}
             	AbstractSymbol type = dispatch.expr.get_type();
             	AbstractSymbol className = type;
-            	if( type.str.equals(TreeConstants.SELF_TYPE) ){
+            	if( type.str.equals(TreeConstants.SELF_TYPE.toString()) ){
             		className = currentClass.name;
             		dispatch.set_type( className );
             	}
-            	/**
+
             	// Testing ---- cant seem to find methods or even classes
             	System.out.println("0.85" + className);
             	for( int i = 0; i < program.methodsByObject.size(); i++ )
             		System.out.println(program.methodsByObject.get(i));
             	System.out.println("0.95");
-            	ArrayList<AbstractSymbol> actualMethodTypes = (ArrayList<AbstractSymbol>) program.methodsByObject.get(className).get(dispatch.name);
+            	ArrayList<AbstractSymbol> actualMethodTypes = (ArrayList<AbstractSymbol>) program.methodsByObject.get(className.toString()).get(dispatch.name.toString());
 
             	// End Testing -----
             	// does this method exist?
-            	if( (program.methodsByObject.get( className ).containsKey( dispatch.name) == false ) ){
+            	if( (!program.methodsByObject.get(className.toString()).containsKey(dispatch.name.toString())) ){
             		program.classTable.semantError().println("Undefined method " + dispatch.name + " at " + expression.lineNumber );
             	}else{
             		System.out.println("2");
@@ -283,7 +283,7 @@ class Traverser {
 	                		}
 	                	}
             		}
-            	}**/
+            	}
             	//TODO
             	break;
             	
