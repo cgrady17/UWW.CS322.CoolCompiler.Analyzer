@@ -8,6 +8,7 @@ import java.util.List;
  * the provided objects.
  */
 class Traverser {
+	final boolean debugging = false;
     private Classes classes;
     private program program;
     private ClassType classType;
@@ -30,7 +31,7 @@ class Traverser {
     void traverse(program origProgram) {
         this.program = origProgram;
 
-        if (classType == ClassType.Complex) {
+        if ( classType == ClassType.Complex ) {
             // start building inheritance tree
             InheritanceTree tree = new InheritanceTree(this.program);
             tree.startBuild();
@@ -70,7 +71,7 @@ class Traverser {
             origProgram.methodsByObject.put(currentClass_.name.toString(), methodsTable);
         }
 
-        if (classType == ClassType.Complex) {
+        if ( classType == ClassType.Complex ) {
             // Check for Main errors
             // we need to check if the program has a main class and main method
             int mainClassCount = 0;
@@ -136,7 +137,7 @@ class Traverser {
 		}
     	
         // We now want to traverse the method
-    	if( classType == ClassType.Complex ){
+    	if( classType == ClassType.Complex && debugging ){
     		System.out.println( "Traversing method expression in " + method.name + " at line " + method.getLineNumber() );
     	}
         traverse(method, objectsTable, methodsTable, currentClass_);
@@ -161,7 +162,7 @@ class Traverser {
         objectsTable.addId(attribute.name, attribute.type_decl);
 
         // We now need to traverse the expression
-        if( classType == ClassType.Complex ){
+        if( classType == ClassType.Complex && debugging ){
         	System.out.println( "Traversing attr expression in " + attribute.name + " at line " + attribute.getLineNumber() );
         }
         //attribute.dump(System.out, 0);
@@ -177,7 +178,7 @@ class Traverser {
 
     	// Determine the type of expression
     	ExpressionType expressionType = ExpressionType.valueOf( expression.getClass().getSimpleName() );
-    	if( classType == ClassType.Complex ){
+    	if( classType == ClassType.Complex && debugging ){
     		System.out.println( "Expression Type: " + expressionType.toString() );
     	}
 
@@ -186,7 +187,6 @@ class Traverser {
             	/** Variables - name: Symbol, body: Expression **/
             	// Traverse assignment to find type
             	Expression assignment = ( (assign)expression ).expr;
-            	
                 traverse( assignment, objectsTable, currentClass);
                 
                 expression.set_type( assignment.get_type() );
@@ -244,7 +244,7 @@ class Traverser {
             		parameterTypes.add( ((Expression)dispatch.actual.getNth(i)).get_type() );
             	}
             	
-            	if( classType == ClassType.Complex ){
+            	if( classType == ClassType.Complex && debugging ){
 	            	dispatch.dump_with_types(System.out, 0);
 	            	
 	            	System.out.println("Dispatch Method Name: " + dispatch.name + " Type: " + dispatch.get_type());
@@ -253,38 +253,41 @@ class Traverser {
             	}
             	AbstractSymbol type = dispatch.expr.get_type();
             	AbstractSymbol className = type;
-            	if( type.str.equals(TreeConstants.SELF_TYPE.toString()) ){
-            		className = currentClass.name;
-            		dispatch.set_type( className );
+            	
+            	//LinkedHashMap<String, LinkedHashMap<String, List<AbstractSymbol>>>
+            	ArrayList<AbstractSymbol> actualMethodTypes = null;
+            	try{
+            		actualMethodTypes = (ArrayList<AbstractSymbol>) program.methodsByObject.get(className.toString()).get(dispatch.name.toString());
+            	}catch( NullPointerException error ){
+            		program.classTable.semantError().println("Error in method " + dispatch.name + " at " + expression.lineNumber );
+            		return;
             	}
-
-            	// Testing ---- cant seem to find methods or even classes
-            	System.out.println("0.85" + className);
-            	for( int i = 0; i < program.methodsByObject.size(); i++ )
-            		System.out.println(program.methodsByObject.get(i));
-            	System.out.println("0.95");
-            	ArrayList<AbstractSymbol> actualMethodTypes = (ArrayList<AbstractSymbol>) program.methodsByObject.get(className.toString()).get(dispatch.name.toString());
-
-            	// End Testing -----
+            	
             	// does this method exist?
             	if( (!program.methodsByObject.get(className.toString()).containsKey(dispatch.name.toString())) ){
             		program.classTable.semantError().println("Undefined method " + dispatch.name + " at " + expression.lineNumber );
             	}else{
-            		System.out.println("2");
-            		// check the amount and types of formals
-            		if( actualMethodTypes.size() != parameterTypes.size() ){
+            		
+            		// check the amount and types of formals, (-1 because last is the return type)
+            		if( actualMethodTypes.size()-1 != parameterTypes.size() ){
             			program.classTable.semantError().println("The method " + dispatch.name + " at " + expression.lineNumber + " has the wrong amount of arguments" );
             		}else{
-            			System.out.println("3");
-	            		for (int i = 0; i < actualMethodTypes.size(); i++) {
+            			
+	            		for (int i = 0; i < actualMethodTypes.size()-1; i++) {
 	                		if( actualMethodTypes.get(i) != parameterTypes.get(i) ){
-	                			System.out.println("4");
+	                			
 	                			program.classTable.semantError().println("Method call " + dispatch.name + " at " + expression.lineNumber + " has the wrong type of arguments" );
 	                		}
 	                	}
             		}
             	}
-            	//TODO
+            	
+            	try{
+            		dispatch.set_type(actualMethodTypes.get(actualMethodTypes.size() - 1));
+            	}catch( NullPointerException error ){}
+                
+                
+                
             	break;
             	
             case cond:
@@ -296,7 +299,8 @@ class Traverser {
             	Expression else_ = ( (cond)expression ).else_exp;
             	
             	// Temp to help understand cond
-            	expression.dump_with_types(System.out,0);
+            	if( classType == ClassType.Complex && debugging )
+            		expression.dump_with_types(System.out,0);
             	
             	// We need to traverse through each of these
             	traverse( if_ , objectsTable, currentClass );
@@ -323,7 +327,8 @@ class Traverser {
             	/** Variables - expr: Expression, cases: Cases **/
             	
             	typcase caseExpr = (typcase)expression;
-            	caseExpr.dump_with_types(System.out,0);
+            	if( classType == ClassType.Complex && debugging )
+            		caseExpr.dump_with_types(System.out,0);
             	
             	// traverse expression
             	traverse(caseExpr.expr, objectsTable, currentClass );
@@ -545,7 +550,7 @@ class Traverser {
             methodsTable.get(methodName).add(currFormal.type_decl);
         }
         methodDef = methodDef.substring(0, methodDef.length() -2 ).concat(" )"); 
-        if( classType == ClassType.Complex ){
+        if( classType == ClassType.Complex && debugging ){
         	System.out.println( methodDef );
         }
         // Add the current Method's return type to the Method's table
