@@ -184,12 +184,22 @@ class Traverser {
 
     	switch( expressionType ) {
             case assign:
-            	/** Variables - name: Symbol, body: Expression **/
+            	/** Variables - name: Symbol, expr: Expression **/
             	// Traverse assignment to find type
             	Expression assignment = ( (assign)expression ).expr;
                 traverse( assignment, objectsTable, currentClass);
                 
                 expression.set_type( assignment.get_type() );
+                
+                // check if it was declared
+                if( objectsTable.lookup( ((assign)expression).name ) == null ){
+                	program.classTable.semantError().println( "Undefined assignment at line " + expression.lineNumber );
+                }else{// type check
+	                if( assignment.get_type() != objectsTable.lookup( ((assign)expression).name ) ){
+	                	program.classTable.semantError().println( "Type mismatch at line " + expression.lineNumber );
+	                }
+                }
+                
                 
                 break;
 
