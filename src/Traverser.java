@@ -8,7 +8,7 @@ import java.util.List;
  * the provided objects.
  */
 class Traverser {
-	final boolean debugging = false;
+	static final boolean debugging = false;
     private Classes classes;
     private program program;
     private ClassType classType;
@@ -206,25 +206,59 @@ class Traverser {
                  */
             	static_dispatch stat_dispatch = (static_dispatch)expression;
             	traverse( stat_dispatch.expr, objectsTable, currentClass);
+            	List<AbstractSymbol> stat_parameterTypes = new ArrayList<AbstractSymbol>();
+            	
             	for (int i = 0; i < stat_dispatch.actual.getLength(); i++) {
             		traverse( (Expression) stat_dispatch.actual.getNth(i), objectsTable, currentClass );
+            		stat_parameterTypes.add( ((Expression)stat_dispatch.actual.getNth(i)).get_type() );
             	}
-            	stat_dispatch.dump_with_types(System.out, 0);
             	
-            	System.out.println("Dispatch Name: " + stat_dispatch.name + " Type: " + stat_dispatch.type_name);
-            	System.out.println("Dispatch Expression Name: " + stat_dispatch.expr.toString() + " Type: " + stat_dispatch.expr.get_type());
-            	String formals = " Formals: ";
-            	for (int i = 0; i < stat_dispatch.actual.getLength(); i++) {
-            	    formals += stat_dispatch.actual.getNth(i) + ", ";
+            	if( classType == ClassType.Complex && debugging ){
+            		stat_dispatch.dump_with_types(System.out, 0);
+	            	
+	            	System.out.println("Dispatch Method Name: " + stat_dispatch.name + " Type: " + stat_dispatch.get_type());
+	            	System.out.println("Dispatch Expression Id: " + stat_dispatch.expr.toString() + " Type: " + stat_dispatch.expr.get_type());
+	            	System.out.println("Dispatch Formals Expressions: " + stat_dispatch.actual.toString());
             	}
-            	formals = formals.substring(0, formals.length() -2 ); 
-            	System.out.println("Dispatch Actual Name: " + stat_dispatch.actual.toString() + formals);
-            	// Check if the expressions conform
+            	AbstractSymbol stat_type = stat_dispatch.expr.get_type();
+            	AbstractSymbol stat_className = stat_type;
             	
+            	//LinkedHashMap<String, LinkedHashMap<String, List<AbstractSymbol>>>
+            	ArrayList<AbstractSymbol> stat_actualMethodTypes = null;
+            	try{
+            		stat_actualMethodTypes = (ArrayList<AbstractSymbol>) program.methodsByObject.get(stat_className.toString()).get(stat_dispatch.name.toString());
+            	}catch( NullPointerException error ){
+            		program.classTable.semantError().println("Error in method " + stat_dispatch.name + " at " + expression.lineNumber );
+            		return;
+            	}
             	
+            	// does this method exist?
+            	if( (!program.methodsByObject.get(stat_className.toString()).containsKey(stat_dispatch.name.toString())) ){
+            		program.classTable.semantError().println("Undefined method " + stat_dispatch.name + " at " + expression.lineNumber );
+            	}else{
+            		
+            		// check the amount and types of formals, (-1 because last is the return type)
+            		if( stat_actualMethodTypes.size()-1 != stat_parameterTypes.size() ){
+            			program.classTable.semantError().println("The method " + stat_dispatch.name + " at " + expression.lineNumber + " has the wrong amount of arguments" );
+            		}else{
+            			
+	            		for (int i = 0; i < stat_actualMethodTypes.size()-1; i++) {
+	                		if( stat_actualMethodTypes.get(i) != stat_parameterTypes.get(i) ){
+	                			
+	                			program.classTable.semantError().println("Method call " + stat_dispatch.name + " at " + expression.lineNumber + " has the wrong type of arguments" );
+	                		}
+	                	}
+            		}
+            	}
+            	
+            	try{
+            		if (stat_actualMethodTypes.get(stat_actualMethodTypes.size() - 1) == TreeConstants.SELF_TYPE) {
+            			stat_dispatch.set_type( stat_dispatch.expr.get_type() );
+                    }else{
+                    	stat_dispatch.set_type(stat_actualMethodTypes.get(stat_actualMethodTypes.size() - 1));
+                    }
+            	}catch( NullPointerException error ){}
 
-            	// expr
-            	//TODO
                 break;
                 
             case dispatch:
@@ -233,6 +267,10 @@ class Traverser {
 	            	The other forms of dispatch are:
 					<id>(<expr>,...,<expr>)
 					<expr>@<type>.id(<expr>,...,<expr>)
+					We need to do several checkings here such as:
+					 Checking if the method exists
+					 Checking the formals(amount and type)
+					 Check if the types conform
             	*/
             	dispatch dispatch = (dispatch)expression;
             	// traverse the identifier
@@ -281,13 +319,16 @@ class Traverser {
 	                	}
             		}
             	}
+            	/** "If f has return type B and B is a class name, then the static type of the dispatch is B. Otherwise, if f has return type SELF_TYPE, then the static type of the dispatch is A." **/
             	
             	try{
-            		dispatch.set_type(actualMethodTypes.get(actualMethodTypes.size() - 1));
+            		if (actualMethodTypes.get(actualMethodTypes.size() - 1) == TreeConstants.SELF_TYPE) {
+            			dispatch.set_type( dispatch.expr.get_type() );
+                    }else{
+                    	dispatch.set_type(actualMethodTypes.get(actualMethodTypes.size() - 1));
+                    }
             	}catch( NullPointerException error ){}
-                
-                
-                
+
             	break;
             	
             case cond:
@@ -314,13 +355,13 @@ class Traverser {
             	/** Variables - pred: Expression, body: Expression **/
             	
             	loop loopExpr = (loop)expression;
-            	// a loop should have its own scope
-            	objectsTable.enterScope();
+            	// a loop should have its own scope?
+            	//objectsTable.enterScope();
             	// a loop has a predicate expression and a body expression. We need to traverse these.
             	traverse( loopExpr.pred, objectsTable, currentClass );
             	traverse( loopExpr.body, objectsTable, currentClass );
-            	// exit scope
-            	objectsTable.exitScope();
+            	// exit scope?
+            	//objectsTable.exitScope();
             	break;
             	
             case typcase:
@@ -347,16 +388,16 @@ class Traverser {
             	break;
             	
             case block:
-            	/** Variables - body: Expression **/
+            	/** Variables - body: Expressions **/
             	
-            	objectsTable.enterScope();
+            
             	// Traverse the block of code
             	for (Enumeration expressions = ((block)expression).body.getElements(); expressions.hasMoreElements();) {
                     Expression blockExpression = (Expression) expressions.nextElement();
                     traverse( blockExpression, objectsTable, currentClass );
                     expression.set_type( blockExpression.get_type() );
             	}
-            	objectsTable.exitScope();
+            	
             	break;
             	
             case let:

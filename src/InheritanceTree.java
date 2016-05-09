@@ -22,7 +22,8 @@ public class InheritanceTree {
      * Initiates the primrary operations of this <code>InheritanceTree</code>.
      */
     void startBuild() {
-        System.out.println("About to build Object's tree...");
+    	if( Traverser.debugging )
+    		System.out.println("About to build Object's tree...");
         buildRoot(TreeConstants.Object_.toString());
     }
 
