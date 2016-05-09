@@ -357,8 +357,11 @@ class Traverser {
             	traverse( if_ , objectsTable, currentClass );
             	traverse( then_ , objectsTable, currentClass );
             	traverse( else_ , objectsTable, currentClass );
-            	// If-else statements should go into a new scope right?
-            	//TODO
+            	
+            	if( if_.get_type() != TreeConstants.Bool )
+            		program.classTable.semantError().println( "'If statement' does not return a Boolean at line " + expression.lineNumber );
+            	
+            	
             	break;
             	
             case loop:
@@ -414,7 +417,7 @@ class Traverser {
             	/** Variables - identifier: Symbol, type_decl: Symbol, inti: Expression, body: Expression **/
             	
             	let letExpr = (let)expression;
-            	//TODO: let should have its own scope, initial expression, and body expression
+            	//let should have its own scope, initial expression, and body expression
             	objectsTable.enterScope();
 
             	// add to object table
@@ -436,6 +439,8 @@ class Traverser {
             	expression.set_type( TreeConstants.Int );
             	traverse( ((plus)expression).e1, objectsTable, currentClass );
             	traverse( ((plus)expression).e2, objectsTable, currentClass );
+            	if( ((plus)expression).e1.get_type() != TreeConstants.Int || ((plus)expression).e2.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
             	break;
             	
             case sub:
@@ -444,6 +449,8 @@ class Traverser {
             	expression.set_type( TreeConstants.Int );
             	traverse( ((sub)expression).e1, objectsTable, currentClass );
             	traverse( ((sub)expression).e2, objectsTable, currentClass );
+            	if( ((sub)expression).e1.get_type() != TreeConstants.Int || ((sub)expression).e2.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
             	break;
             	
             case mul:
@@ -452,6 +459,8 @@ class Traverser {
             	expression.set_type( TreeConstants.Int );
             	traverse( ((mul)expression).e1, objectsTable, currentClass );
             	traverse( ((mul)expression).e2, objectsTable, currentClass );
+            	if( ((mul)expression).e1.get_type() != TreeConstants.Int || ((mul)expression).e2.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
             	break;
             	
             case divide:
@@ -460,6 +469,8 @@ class Traverser {
             	expression.set_type( TreeConstants.Int );
             	traverse( ((divide)expression).e1, objectsTable, currentClass );
             	traverse( ((divide)expression).e2, objectsTable, currentClass );
+            	if( ((divide)expression).e1.get_type() != TreeConstants.Int || ((divide)expression).e2.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
             	break;
             	
             case neg:
@@ -467,6 +478,8 @@ class Traverser {
             	
             	expression.set_type( TreeConstants.Int );
             	traverse( ((neg)expression).e1, objectsTable, currentClass );
+            	if( ((neg)expression).e1.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
             	break;
             	
             case lt:
@@ -475,6 +488,9 @@ class Traverser {
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((lt)expression).e1, objectsTable, currentClass );
             	traverse( ((lt)expression).e2, objectsTable, currentClass );
+            	if( ((lt)expression).e1.get_type() != TreeConstants.Int || ((lt)expression).e2.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
+            	
             	break;
             	
             case eq:
@@ -483,6 +499,8 @@ class Traverser {
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((eq)expression).e1, objectsTable, currentClass );
             	traverse( ((eq)expression).e2, objectsTable, currentClass );
+            	if( ((eq)expression).e1.get_type() != ((eq)expression).e2.get_type() )
+            		program.classTable.semantError().println( "Comparison mismatch at line " + expression.lineNumber );
             	break;
             	
             case leq:
@@ -491,14 +509,17 @@ class Traverser {
             	expression.set_type( TreeConstants.Bool );
             	traverse( ((leq)expression).e1, objectsTable, currentClass );
             	traverse( ((leq)expression).e2, objectsTable, currentClass );
+            	if( ((leq)expression).e1.get_type() != TreeConstants.Int || ((leq)expression).e2.get_type() != TreeConstants.Int )
+            		program.classTable.semantError().println( "Expression at line " + expression.lineNumber + " is not an Int" );
             	break;
             	
             case comp:
             	/** Variables - e1: Expression **/
             	
-            	// compare?
-            	expression.set_type( TreeConstants.Bool );
             	traverse( ((comp)expression).e1, objectsTable, currentClass );
+            	if( ((comp)expression).e1.get_type() != TreeConstants.Bool )
+            		program.classTable.semantError().println( "Comparison at line " + expression.lineNumber + " is not a Boolean" );
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case int_const:
@@ -530,9 +551,8 @@ class Traverser {
             	
             case isvoid:
             	/** Variables - e1: Expression **/
-
-            	expression.set_type( TreeConstants.Bool );
             	traverse( ((isvoid)expression).e1, objectsTable, currentClass );
+            	expression.set_type( TreeConstants.Bool );
             	break;
             	
             case no_expr:
@@ -542,15 +562,16 @@ class Traverser {
             	
             case object:
             	/** Variables - name: Symbol **/
-            	
-            	//TODO
+
             	//Find the type of this object
-            	if( objectsTable.lookup( ((object)expression).name ) != null )
+            	if( objectsTable.lookup( ((object)expression).name ) != null ){
 					expression.set_type( (AbstractSymbol) objectsTable.lookup( ((object)expression).name ) );
-            	else if( ((object)expression).name == TreeConstants.self )
+            	}else if( ((object)expression).name == TreeConstants.self ){
             		expression.set_type( TreeConstants.SELF_TYPE );
-            	else
+    			}else{
+            		program.classTable.semantError().println( "Undeclared object at line " + expression.lineNumber );
             		expression.set_type( TreeConstants.Object_ );
+            	}
             	
             	break;
             	
