@@ -104,7 +104,6 @@ class Dog inherits Animal{
 
     init(x : Int, y : String) : Animal {
      {
-
         numOfLegs <- 4;
         name <- "doge";
         species <- "mammal";
