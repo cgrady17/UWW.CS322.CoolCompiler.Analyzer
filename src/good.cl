@@ -83,3 +83,33 @@ class Node inherits IO{
         node
     };
 };
+
+class Animal {
+
+    numOfLegs : Int;
+    name : String;
+
+    init(x : Int, y : String) : Animal {
+    {
+    numOfLegs <- x;
+    name <- y;
+    self;
+    }
+    };
+};
+
+class Dog inherits Animal{
+
+    species : String;
+
+    init(x : Int, y : String) : Animal {
+     {
+
+        numOfLegs <- 4;
+        name <- "doge";
+        species <- "mammal";
+        self;
+     }
+    };
+
+};
