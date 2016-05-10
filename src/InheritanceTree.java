@@ -73,7 +73,6 @@ public class InheritanceTree {
                         if (parentTable.lookup(((attr) thisFeature).name) != null) {
                             program.classTable.semantError(thisClass.filename, thisFeature).println("Attribute " + ((attr) thisFeature).name.toString() + " is already defined and cannot be overriden.");
 
-                            // TODO: Remove from this Class' object symbol table
                         }
                         break;
                     case method:
@@ -95,8 +94,6 @@ public class InheritanceTree {
                         break;
                 }
             }
-
-            // TODO: Copy classObjects to parentObjects (or vice versa)
 
             if (parentMethods != null) {
                 for (String methodName : parentMethods.keySet()) {

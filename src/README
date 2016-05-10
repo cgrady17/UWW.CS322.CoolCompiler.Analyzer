@@ -166,3 +166,67 @@ Instructions
 
 Write-up for PA4
 ----------------
+
+We began in our efforts to build this semantic analyzer by first taking time to
+fully understand the skeleton code provided. cool-tree.java was ~1400 lines of code
+even as a skeleton so there was a lot to go through and try to follow. (Not to mention
+the file broke best practices, putting a ton of classes into a single file). We decided then
+that we wanted to contribute to even more depth to that one file and to instead separate our
+custom code into disparate .java files. By doing so we only needed to expand cool-tree.java
+by a handful of lines that served only to instantiate and call the Traverser.
+
+In addition to taking this modular, and in our opinion more organized, path, we also made
+other decision regarding collection types. In class you mentioned there were really two
+different collection types to use, either a linked list or a hash table. This made us think of
+the LinkedHashMap<key, value> collection which is a hash table and linked list implementation
+of the map. The reason we chose this was that it offered a predictable iteration order (to help
+with debugging) and built-in function for checking whether a key or a value existed within the
+LinkedHashMap as well a getter and putter. Overall, we were very pleased with our decision
+to use a LinkedHashMap.
+
+Our analyzer begins by instantiating a Traverser, sourced from our custom Traverser.java,
+for basic classes. The Traverser then loops through each of the basic classes and then
+loops through each of the Class' features. It then traverses that feature differently
+based on whether the feature is an attribute of the Class or a method. Traversing an expression
+is, of course, the largest and most verbose part of the overall feature traversal. This
+where we handle each of the different possibilities, like dispatch, assignment, etc.
+
+When traversal begins, we start by calling InheritanceTree.build()::void which
+will build out our entire inheritance tree which serves the primary function
+of add inheriting all features from a parent to its child and the confirming
+that the child contains all of its parent's features. It recurses over all
+the children of each class, eventually emanating through all classes.
+
+We also have some fatal errors, wherein they would immediately stop the execution of the analyzer.
+An example of this would be when an complex class inherits from an un-allowed primitive, ie. Int, Bool,
+or String. Otherwise, we'll use ClassTable.semantError()::PrintStream to output and log the error
+but not interrupt execution.
+
+Regarding passes of traversal, we opted to perform a single pass over the AST for both
+basic and complex classes. Within the pass we perform scoping, inheritance checks, and type checks.
+We know most actual compilers perform multiple passes, but doing a single pass for COOL seemed,
+after confirming our tests, to be more than adequate. It also helped keep our code streamlined.
+
+For this project, we met five times in-person, including in the Collaboration Rooms in Anderson's GAL,
+to work. Being able to hookup to a project and all of us work off one screen helped greatly to work
+though everything together. In addition to this, we also worked separately on our assigned items (see below).
+
+Speaking of testing, we expanded on good.cl and bad.cl to include significantly more test cases, and
+test cases that were more thorough. In good.cl, we create COOL classes to perform arithmetic and
+even a Node class. We validated our good.cl test cases by comparing output between our semant and
+the semant default on Washington. Bad.cl was easier to make because we could just seriously abuse
+COOL and it's one of the few times where getting errors is desired. We did things like inheriting from
+un-allowed primitives, calling non-existant methods, passing the wrong number and type of parameters, etc.
+We then also tested our semantic analyzer on several of the example COOL classes in /opt/cs322/examples,
+including on lam.cl, to ensure they worked as well.
+
+Regarding the division of work among group members, everyone contributed evenly with the exception
+of our added member, Fabricio. Unfortunately, he did not attend any group meetings, respond to any
+communications from us, nor contribute in any other way to the project. Connor primarily focused
+on the Inheritance part, creating InheritanceTree.java and expanding ClassTable. Andrew worked on
+the Traverser, primarily traversing Expressions and type checking. Adam worked on building out our
+Traverser, but primarily focused on creating our test cases. Finally, Brian also worked on the Traverser
+(basically we all played a part in the Traverser, as it is the majority of program), and guided our
+design. Because we worked together for much of this off one screen, we all got to participate in the creation
+of most of the program. We would recommend getting a Collaboration room in either Anderson's GAL or main floor
+for future students (they do require reservations, though).

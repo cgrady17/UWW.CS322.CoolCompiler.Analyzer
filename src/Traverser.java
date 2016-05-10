@@ -216,7 +216,7 @@ class Traverser {
                  */
             	static_dispatch stat_dispatch = (static_dispatch)expression;
             	traverse( stat_dispatch.expr, objectsTable, currentClass);
-            	List<AbstractSymbol> stat_parameterTypes = new ArrayList<AbstractSymbol>();
+            	List<AbstractSymbol> stat_parameterTypes = new ArrayList<>();
             	
             	for (int i = 0; i < stat_dispatch.actual.getLength(); i++) {
             		traverse( (Expression) stat_dispatch.actual.getNth(i), objectsTable, currentClass );
@@ -230,8 +230,7 @@ class Traverser {
 	            	System.out.println("Dispatch Expression Id: " + stat_dispatch.expr.toString() + " Type: " + stat_dispatch.expr.get_type());
 	            	System.out.println("Dispatch Formals Expressions: " + stat_dispatch.actual.toString());
             	}
-            	AbstractSymbol stat_type = stat_dispatch.expr.get_type();
-            	AbstractSymbol stat_className = stat_type;
+				AbstractSymbol stat_className = stat_dispatch.expr.get_type();
             	
             	//LinkedHashMap<String, LinkedHashMap<String, List<AbstractSymbol>>>
             	ArrayList<AbstractSymbol> stat_actualMethodTypes = null;
@@ -299,8 +298,7 @@ class Traverser {
 	            	System.out.println("Dispatch Expression Id: " + dispatch.expr.toString() + " Type: " + dispatch.expr.get_type());
 	            	System.out.println("Dispatch Formals Expressions: " + dispatch.actual.toString());
             	}
-            	AbstractSymbol type = dispatch.expr.get_type();
-            	AbstractSymbol className = type;
+				AbstractSymbol className = dispatch.expr.get_type();
             	
             	//LinkedHashMap<String, LinkedHashMap<String, List<AbstractSymbol>>>
             	ArrayList<AbstractSymbol> actualMethodTypes = null;

@@ -314,7 +314,7 @@ class program extends Program {
         traverser.traverse(this);
 
         /**
-         * Instantiate our Traverses that will be use to traverse
+         * Instantiate our Traverser that will be use to traverse
          * complex classes  
          */
         System.out.println( "\n\nTraversing Complex Classes..." ); 
